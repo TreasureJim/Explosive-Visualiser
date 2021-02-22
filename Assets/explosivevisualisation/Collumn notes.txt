@@ -1,0 +1,19 @@
+pre en - pre blast blast
+post en - post blast system
+
+
+-1 - unblasted
+0 - air
+1 - blasted rock
+
+
+-1 - dont move
+0 - air 
+1 - blocks that are blasted but didnt move
+2 - blocks that are blasted but do move
+
+
+66029 num of blocks that move
+
+
+rendering pixels with before and after 
