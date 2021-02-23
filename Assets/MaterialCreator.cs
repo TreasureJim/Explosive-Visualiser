@@ -75,47 +75,6 @@ public class MaterialCreator : MonoBehaviour
         // Minus 1 is taken to start array at 0
         Color32[] textureColors = new Color32[(tex.width * tex.height * tex.depth)];
 
-        /*
-         * DUMB SHIT
-         * 
-         * 
-         * 
-        int listIndex = 0;
-        for (int z = 0; z < tex.width - 1; z++) 
-        {
-            for (int y = 0; y < tex.height - 1; y++)
-            {
-                for (int x = 0; x < tex.depth - 1; x++)
-                {
-                    int currentIndex = tex.width * tex.height * z +     tex.width * y +     x;
-                    Block currentBlock = allBlocks[listIndex];
-
-                    Color32 currentBlockColor;
-                    // If not air set to block colour
-                    if (currentBlock.PSTN != 0) {
-                        currentBlockColor = blockColor;
-                    }
-                    // If air set to invisible colour
-                    else {
-                        currentBlockColor = new Color32(0, 0, 0, 0);
-                    }
-
-                    try
-                    {
-                        colors[currentIndex] = currentBlockColor;
-                    } catch (IndexOutOfRangeException)
-                    {
-                        //REMOVE AFTER DEBUGGING
-                        Debug.LogError($"x {x} y {y} z {z}, Block x {currentBlock.XC} y {currentBlock.YC} z {currentBlock.ZC}, Supposed to be at {tex.width * tex.height * currentBlock.ZC + tex.width * currentBlock.YC + currentBlock.XC}, broke at index: {currentIndex}");
-                        AppHelper.Quit();
-                    }
-
-                    listIndex++;
-                }
-            }
-        }
-        */
-
         // Loop through each block in dataset and set corresponding colour on textureColors
         foreach (Block block in allBlocks)
         {

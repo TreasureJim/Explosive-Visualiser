@@ -4,6 +4,8 @@ Shader "Custom/3D Transparent Volume Shader"
     {
         _MainTex ("Texture", 3D) = "white" {}
         _StepSize ("Step Size", float) = 0.01
+        MAX_STEP_COUNT ("Max Step Count", int) = 1024
+
     }
     SubShader
     {
@@ -20,7 +22,7 @@ Shader "Custom/3D Transparent Volume Shader"
             #include "UnityCG.cginc"
 
             // Maximum amount of raymarching samples
-            #define MAX_STEP_COUNT 128
+            #define MAX_STEP_COUNT 1024
 
             // Allowed floating point inaccuracy
             #define EPSILON 0.00001f
@@ -62,8 +64,7 @@ Shader "Custom/3D Transparent Volume Shader"
                 float3 rayOrigin = i.objectVertex;
 
                 // Use vector from camera to object surface to get ray direction
-                float3 rayDirection = mul(unity_WorldToObject, float4(normalize(i.vectorToSurface), 1));
-
+                float3 rayDirection = mul(unity_WorldToObject, float4(normalize(i.vectorToSurface), 0)).xyz;
                 float4 color = float4(0, 0, 0, 0);
                 float3 samplePosition = rayOrigin;
 
@@ -75,11 +76,8 @@ Shader "Custom/3D Transparent Volume Shader"
                     {
                         float4 sampledColor = tex3D(_MainTex, samplePosition + float3(0.5f, 0.5f, 0.5f));
 
-                        if (sampledColor.a == 255)
-                        {
-                            color = sampledColor;
-                            return color;
-                        }
+                        color = lerp(sampledColor, color, color.a > 0.5);
+
 
                         samplePosition += rayDirection * _StepSize;
                     }
