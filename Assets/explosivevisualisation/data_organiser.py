@@ -13,13 +13,16 @@ movingBlocks = list()
 allBlocks = list()
 
 highestX, highestY, highestZ = 0, 0, 0
+minX, minY, minZ = 0,0,0
+lastTimePoint = -1
+numTimePoints = 0
 
 #Loop through rows in the file
 for row in data: 
 
     row[1] = str(int(row[1]) + 1)
-    row[2] = str(int(row[1]) + 1)
-    row[3] = str(int(row[1]) + 1)
+    row[2] = str(int(row[2]) + 1)
+    row[3] = str(int(row[3]) + 1)
 
     #santize collumn 15, 16, 20, 21, 22 as cells cannot have null values
         #if collumn has a null value a value of -1 is inserted
@@ -29,17 +32,17 @@ for row in data:
     if (row[15] == ""): 
         row[15] = "-1"
     if (row[16] == ""): 
-        row[16] = "-1"
+        row[16] = "0"
     else:
-        row[16] = str(int(row[1]) + 1)
+        row[16] = str(int(row[16]) + 1)
     if (row[17] == ""): 
-        row[17] = "-1"
+        row[17] = "0"
     else: 
-        row[17] = str(int(row[1]) + 1)
+        row[17] = str(int(row[17]) + 1)
     if (row[18] == ""): 
-        row[18] = "-1"
+        row[18] = "0"
     else: 
-        row[18] = str(int(row[1]) + 1)
+        row[18] = str(int(row[18]) + 1)
     if (row[19] == ""): 
         row[19] = "-1"
     if (row[20] == ""): 
@@ -49,6 +52,20 @@ for row in data:
 
 
 
+    #Find the lowest XC, YC, YZ values
+    if(int(row[1]) < minX): 
+        minX = int(row[1])
+    if(int(row[2]) < minY): 
+        minY = int(row[2])
+    if(int(row[3]) < minZ): 
+        minZ = int(row[3])
+    if(int(row[16]) < minX): 
+        minX = int(row[16])
+    if(int(row[17]) < minY): 
+        minY = int(row[17])
+    if(int(row[18]) < minZ): 
+        minZ = int(row[18])
+
     #Find the highest XC, YC, YZ values
     if(int(row[1]) > highestX): 
         highestX = int(row[1])
@@ -56,7 +73,17 @@ for row in data:
         highestY = int(row[2])
     if(int(row[3]) > highestZ): 
         highestZ = int(row[3])
+    if(int(row[16]) > highestX): 
+        highestX = int(row[16])
+    if(int(row[17]) > highestY): 
+        highestY = int(row[17])
+    if(int(row[18]) > highestZ): 
+        highestZ = int(row[18])
 
+    # Calculate number of time points
+    if(lastTimePoint != float(row[7])):
+        lastTimePoint = float(row[7])
+        numTimePoints += 1
 
     # Add to all blocks csv file
     allBlocks.append(row)
@@ -66,6 +93,9 @@ for row in data:
         zeroStartBlocks.append(row)
     else: 
         movingBlocks.append(row)
+    
+    if(int(row[0]) % 10000 == 0):
+        print("Block Down")
 
 #Sort moving blocks by time of movement
 movingBlocks = sorted(movingBlocks, key=lambda row: row[7])
@@ -91,4 +121,6 @@ with open('all_block.csv', mode='w', newline='') as allBlockFile:
     blockWriter.writerows(allBlocks)
 
 print("highest x value: ", highestX - 1, ", highest y value: ", highestY - 1, ", highest z value: ", highestZ - 1)
+print("lowest x value: ", minX, ", lowest y value: ", minY, ", lowest z value: ", minZ)
+print("number of time points: ", numTimePoints)
 input()
