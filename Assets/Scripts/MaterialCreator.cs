@@ -7,7 +7,6 @@ using UnityEngine;
 
 [RequireComponent(typeof(MeshRenderer))]
 [RequireComponent(typeof(MeshFilter))]
-[ExecuteInEditMode]
 public class MaterialCreator : MonoBehaviour
 {
     MeshRenderer meshRenderer;
@@ -118,7 +117,8 @@ public class MaterialCreator : MonoBehaviour
         // If base texture doesnt exist then create it
         if (guids.Length == 0)
         {
-            CreateBaseTexture();
+            // If CreateBaseTexture returns an error then exit early to prevent infinite loop
+            if (CreateBaseTexture() == 0) { return; };
             GetBaseTexture();
             return;
         }
@@ -127,7 +127,7 @@ public class MaterialCreator : MonoBehaviour
         baseStaticTexture = (Texture3D)AssetDatabase.LoadAssetAtPath(texturePath, typeof(Texture3D));
     }
     // Creates the base texture which all other textures are based on 
-    void CreateBaseTexture()
+    int CreateBaseTexture()
     {
         // Setup empty texture
         baseStaticTexture = new Texture3D(textureWidth, textureHeight, textureDepth, TextureFormat.RGBA32, false)
@@ -143,14 +143,14 @@ public class MaterialCreator : MonoBehaviour
         foreach (Block block in allBlocks)
         {
             // Find current index by block position
-            int currentIndex = baseStaticTexture.width * baseStaticTexture.height * block.ZC + baseStaticTexture.width * block.YC + block.XC;
+            int currentIndex = (baseStaticTexture.width * baseStaticTexture.height * block.ZC + baseStaticTexture.width * block.XC + block.YC) - (baseStaticTexture.width * baseStaticTexture.height + baseStaticTexture.width + 1);
 
             try
             {
                 // If not air set to block colour
                 if (block.PSTN != 0)
                 {
-                    textureColors[currentIndex] = new Color32(0, (byte)block.YC, 0, 255);
+                    textureColors[currentIndex] = new Color32((byte)block.XC, 0, 0, 255);
                 }
                 // If air set to invisible colour
                 else
@@ -160,7 +160,8 @@ public class MaterialCreator : MonoBehaviour
             }
             catch (IndexOutOfRangeException)
             {
-                Debug.LogError($"Block x {block.XC} y {block.YC} z {block.ZC}, Supposed to be at {baseStaticTexture.width * baseStaticTexture.height * block.ZC + baseStaticTexture.width * block.YC + block.XC}, broke at index: {currentIndex}");
+                Debug.LogError($"Block x {block.XC} y {block.YC} z {block.ZC}, broke at index: {currentIndex}");
+                return 0;
             }
         }
 
@@ -173,6 +174,7 @@ public class MaterialCreator : MonoBehaviour
         referenceTextures[0] = baseStaticTexture;
 
         Debug.Log("Created Base Texture");
+        return 1;
     }
     // Get all reference textures and save to dictionary
     public void GetReferenceTextures()
@@ -185,19 +187,25 @@ public class MaterialCreator : MonoBehaviour
         {
             string path = AssetDatabase.GUIDToAssetPath(guid);
             //Get the percent time of the texture
-            int textureTime;
-            Int32.TryParse(path.Substring("Assets/TextureInstances/Texture".Length-1, 1), out textureTime);
+            Int32.TryParse(path.Substring("Assets/TextureInstances/Texture".Length - 1, 1), out int textureTime);
             // Set texture
             referenceTextures[textureTime] = (Texture3D)AssetDatabase.LoadAssetAtPath(path, typeof(Texture3D));
         }
 
-        for(int i = 1; i < 100; i += savePointFrequency)
+        // Get or make reference texture for every point at set frequency
+        for(int i = savePointFrequency; i < 100 - savePointFrequency; i += savePointFrequency)
         {
             if (!referenceTextures.ContainsKey(i))
             {
                 int lastTime = GetLastReferenceTextureTime(i);
                 SaveTextureAtPoint(i, referenceTextures[lastTime], lastTime);
             }
+        }
+        // Get or make reference texture for final texture
+        if (!referenceTextures.ContainsKey(100))
+        {
+            int lastTime = GetLastReferenceTextureTime(100);
+            SaveTextureAtPoint(100, referenceTextures[lastTime], lastTime);
         }
     }
 
@@ -217,6 +225,7 @@ public class MaterialCreator : MonoBehaviour
         float startBlockTime = PercentTimeToBlockTime(startingTime);
         float finishBlockTime = PercentTimeToBlockTime(percentTime);
 
+        texture = baseStaticTexture;
         Color32[] textureColors = baseStaticTexture.GetPixels32();
 
         // Find the index to start at

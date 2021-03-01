@@ -50,16 +50,11 @@ public class TestCubeMaker : MonoBehaviour
         };
 
         // Create an array of colours size to the cube we are making to assign to the 3D texture 
-        // Minus 1 is taken to start array at 0
-        Color32[] textureColors = new Color32[(texture.width * texture.height * texture.depth)];
+        Color32[] textureColors = new Color32[texture.width * texture.height * texture.depth];
 
-        // Loop through textureColors array and 50% chance of leaving it transparent or filling it black
-        for (int i = 0; i < textureColors.Length - 1; i++)
+        for (int i = 0; i < texture.height * texture.width; i++)
         {
-            if(rand.Next(1,101) < 2)
-            {
-                textureColors[i] = blockColor;
-            }
+            textureColors[i] = blockColor;
         }
 
         texture.SetPixels32(textureColors);

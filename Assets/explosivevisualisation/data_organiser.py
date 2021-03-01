@@ -1,126 +1,29 @@
-import sys, csv
+import time
+import pandas as pd
 
-#File location of csv file to be sorted
-csvFile = r'D:\Programming\!Work\AugmentExpertSystems\Explosive Visualiser\Assets\explosivevisualisation\dataset.csv'
+csvFile = "D:\Programming\!Work\AugmentExpertSystems\Explosive Visualiser\Assets\explosivevisualisation/dataset.csv"
+df = pd.read_csv(csvFile)
 
-#Open csv file
-data = csv.reader(open(csvFile), delimiter=',')
-#Save header of file
-header = next(data)
+# set empty co-ordinate rows as 0 
+df[["XC", "YC", "ZC", "XF", "YF", "ZF"]].fillna(0, inplace=True)
+# set empty rows as -1
+df.fillna(-1, inplace=True)
 
-zeroStartBlocks = list()
-movingBlocks = list()
-allBlocks = list()
+# start co-ordinate values at 1
+df["XC"] = df["XC"] + 1
+df["YC"] = df["YC"] + 1
+df["ZC"] = df["ZC"] + 1
+df["XF"] = df["XF"] + 1
+df["YF"] = df["YF"] + 1
+df["ZF"] = df["ZF"] + 1
 
-highestX, highestY, highestZ = 0, 0, 0
-minX, minY, minZ = 0,0,0
-lastTimePoint = -1
-numTimePoints = 0
+zeroStartBlocks = df[df["MOVESEQ"]==-1] # blocks that dont move
+movingBlocks = df[df["MOVESEQ"]>=0].sort_values("MOVESEQ") # blocks that move
 
-#Loop through rows in the file
-for row in data: 
+zeroStartBlocks.to_csv("zeroStartBlocks_ts.csv", index=False)
+movingBlocks.to_csv("movingBlocks_ts.csv", index=False)
+df.to_csv("allBlocks_ts.csv")
 
-    row[1] = str(int(row[1]) + 1)
-    row[2] = str(int(row[2]) + 1)
-    row[3] = str(int(row[3]) + 1)
-
-    #santize collumn 15, 16, 20, 21, 22 as cells cannot have null values
-        #if collumn has a null value a value of -1 is inserted
-        # Add 1 to all co-ordinates to start at 1 instead of 0
-    if (row[14] == ""): 
-        row[14] = "-1"
-    if (row[15] == ""): 
-        row[15] = "-1"
-    if (row[16] == ""): 
-        row[16] = "0"
-    else:
-        row[16] = str(int(row[16]) + 1)
-    if (row[17] == ""): 
-        row[17] = "0"
-    else: 
-        row[17] = str(int(row[17]) + 1)
-    if (row[18] == ""): 
-        row[18] = "0"
-    else: 
-        row[18] = str(int(row[18]) + 1)
-    if (row[19] == ""): 
-        row[19] = "-1"
-    if (row[20] == ""): 
-        row[20] = "-1"
-    if (row[21] == ""): 
-        row[21] = "-1"
-
-
-
-    #Find the lowest XC, YC, YZ values
-    if(int(row[1]) < minX): 
-        minX = int(row[1])
-    if(int(row[2]) < minY): 
-        minY = int(row[2])
-    if(int(row[3]) < minZ): 
-        minZ = int(row[3])
-    if(int(row[16]) < minX): 
-        minX = int(row[16])
-    if(int(row[17]) < minY): 
-        minY = int(row[17])
-    if(int(row[18]) < minZ): 
-        minZ = int(row[18])
-
-    #Find the highest XC, YC, YZ values
-    if(int(row[1]) > highestX): 
-        highestX = int(row[1])
-    if(int(row[2]) > highestY): 
-        highestY = int(row[2])
-    if(int(row[3]) > highestZ): 
-        highestZ = int(row[3])
-    if(int(row[16]) > highestX): 
-        highestX = int(row[16])
-    if(int(row[17]) > highestY): 
-        highestY = int(row[17])
-    if(int(row[18]) > highestZ): 
-        highestZ = int(row[18])
-
-    # Calculate number of time points
-    if(lastTimePoint != float(row[7])):
-        lastTimePoint = float(row[7])
-        numTimePoints += 1
-
-    # Add to all blocks csv file
-    allBlocks.append(row)
-    #Go through each row(block) in csv file
-        #If a block has a timing of 0 (eg. doesnt move) put in zero start blocks list otherwise put in moving blocks list
-    if(row[7] == '0'): 
-        zeroStartBlocks.append(row)
-    else: 
-        movingBlocks.append(row)
-    
-    if(int(row[0]) % 10000 == 0):
-        print("Block Down")
-
-#Sort moving blocks by time of movement
-movingBlocks = sorted(movingBlocks, key=lambda row: row[7])
-
-
-#Sorted File Creation
-#Csv file created with blocks that dont move
-with open('zero_start_block.csv', mode='w', newline='') as zeroBlockFile: 
-    blockWriter = csv.writer(zeroBlockFile)
-    blockWriter.writerow(header)
-    blockWriter.writerows(zeroStartBlocks)
-
-#Csv file created for blocks that move sorted by time of moving
-with open('moving_block.csv', mode='w', newline='') as movingBlockFile: 
-    blockWriter = csv.writer(movingBlockFile)
-    blockWriter.writerow(header)
-    blockWriter.writerows(movingBlocks)
-
-#Csv file created for all blocks
-with open('all_block.csv', mode='w', newline='') as allBlockFile: 
-    blockWriter = csv.writer(allBlockFile)
-    blockWriter.writerow(header)
-    blockWriter.writerows(allBlocks)
-
-print("highest x value: ", highestX - 1, ", highest y value: ", highestY - 1, ", highest z value: ", highestZ - 1)
-print("lowest x value: ", minX, ", lowest y value: ", minY, ", lowest z value: ", minZ)
-print("number of time points: ", numTimePoints)
-input()
+print("numTimePoints: ", len(df[df["MOVESEQ"]>=0]))
+print("highest x value: ", max(df.XC)-1, ", highest y value: ", max(df.YC)-1, ", highest z value: ", max(df.ZC)-1)
+print("lowest x value: ", min(df.XC)-1, ", lowest y value: ", min(df.YC)-1, ", lowest z value: ", min(df.ZC)-1)
