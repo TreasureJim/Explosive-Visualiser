@@ -27,3 +27,5 @@ df.to_csv("allBlocks_ts.csv")
 print("numTimePoints: ", len(df[df["MOVESEQ"]>=0]))
 print("highest x value: ", max(df.XC)-1, ", highest y value: ", max(df.YC)-1, ", highest z value: ", max(df.ZC)-1)
 print("lowest x value: ", min(df.XC)-1, ", lowest y value: ", min(df.YC)-1, ", lowest z value: ", min(df.ZC)-1)
+
+print(movingBlocks.tail())

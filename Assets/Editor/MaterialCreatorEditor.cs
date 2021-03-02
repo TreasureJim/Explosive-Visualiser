@@ -10,6 +10,10 @@ class DecalMeshHelperEditor : Editor
 
         MaterialCreator materialCreator = (MaterialCreator)target;
 
+        if (GUILayout.Button("Cache components"))
+        {
+            materialCreator.CacheComponents();
+        }
         if (GUILayout.Button("Get block data"))
         {
             materialCreator.GetData();

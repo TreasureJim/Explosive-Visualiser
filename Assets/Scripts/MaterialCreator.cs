@@ -48,6 +48,11 @@ public class MaterialCreator : MonoBehaviour
 
     private void Awake()
     {
+        CacheComponents();
+    }
+
+    public void CacheComponents()
+    {
         // Cache objects
         meshRenderer = GetComponent<MeshRenderer>();
         meshFilter = GetComponent<MeshFilter>();
@@ -95,11 +100,7 @@ public class MaterialCreator : MonoBehaviour
         {
             int lastTime = GetLastReferenceTextureTime(time);
             CreateTextureAtPoint(time, referenceTextures[lastTime], lastTime);
-        }
-        // Check if more than one texture is found
-        if (guids.Length > 1)
-        {
-            Debug.LogWarning("More than one instance of a texture has been saved");
+            return;
         }
 
         // Get texture path
@@ -125,6 +126,8 @@ public class MaterialCreator : MonoBehaviour
 
         string texturePath = AssetDatabase.GUIDToAssetPath(guids[0]);
         baseStaticTexture = (Texture3D)AssetDatabase.LoadAssetAtPath(texturePath, typeof(Texture3D));
+
+        Debug.Log("Retrieved base texture");
     }
     // Creates the base texture which all other textures are based on 
     int CreateBaseTexture()
@@ -150,7 +153,7 @@ public class MaterialCreator : MonoBehaviour
                 // If not air set to block colour
                 if (block.PSTN != 0)
                 {
-                    textureColors[currentIndex] = new Color32((byte)block.XC, 0, 0, 255);
+                    textureColors[currentIndex] = new Color32(0, (byte)((float)block.ZC/baseStaticTexture.depth*255), 0, 255);
                 }
                 // If air set to invisible colour
                 else
@@ -193,7 +196,7 @@ public class MaterialCreator : MonoBehaviour
         }
 
         // Get or make reference texture for every point at set frequency
-        for(int i = savePointFrequency; i < 100 - savePointFrequency; i += savePointFrequency)
+        for(int i = savePointFrequency; i <= 100 - savePointFrequency; i += savePointFrequency)
         {
             if (!referenceTextures.ContainsKey(i))
             {
@@ -225,14 +228,18 @@ public class MaterialCreator : MonoBehaviour
         float startBlockTime = PercentTimeToBlockTime(startingTime);
         float finishBlockTime = PercentTimeToBlockTime(percentTime);
 
-        texture = baseStaticTexture;
+        texture = new Texture3D(textureWidth, textureHeight, textureDepth, TextureFormat.RGBA32, false)
+        {
+            wrapMode = TextureWrapMode.Clamp,
+            filterMode = FilterMode.Point
+        };
         Color32[] textureColors = baseStaticTexture.GetPixels32();
 
         // Find the index to start at
         int BlockTimeToIndex(float blockTime)
         {
             int index = 0;
-            while (movingBlocks[index].TIMING < blockTime)
+            while (movingBlocks[index].MOVESEQ < blockTime)
             {
                 index++;
             }
@@ -241,19 +248,19 @@ public class MaterialCreator : MonoBehaviour
         }
 
         int blockIndex = BlockTimeToIndex(startBlockTime);
-        while (movingBlocks[blockIndex].TIMING <= finishBlockTime)
+        while (movingBlocks[blockIndex].MOVESEQ <= finishBlockTime)
         {
             // Initial location of block
-            int textureIndex1 = baseStaticTexture.width * baseStaticTexture.height * movingBlocks[blockIndex].ZC + baseStaticTexture.width * movingBlocks[blockIndex].YC + movingBlocks[blockIndex].XC;
+            int textureIndex1 = (texture.width * texture.height * movingBlocks[blockIndex].ZC + texture.width * movingBlocks[blockIndex].XC + movingBlocks[blockIndex].YC) - (texture.width * texture.height + texture.width + 1);
             // Final location of block
-            int textureIndex2 = baseStaticTexture.width * baseStaticTexture.height * movingBlocks[blockIndex].ZF + baseStaticTexture.width * movingBlocks[blockIndex].YF + movingBlocks[blockIndex].XF;
+            int textureIndex2 = (texture.width * texture.height * movingBlocks[blockIndex].ZF + texture.width * movingBlocks[blockIndex].XF + movingBlocks[blockIndex].YF) - (texture.width * texture.height + texture.width + 1);
 
             try
             {
                 // Set original location to be empty
                 textureColors[textureIndex1] = airColor;
                 // Set new location to be block coloured
-                textureColors[textureIndex2] = new Color32(0, (byte)movingBlocks[blockIndex].YC, 0, 255);
+                textureColors[textureIndex2] = new Color32(0, (byte)((float)movingBlocks[blockIndex].ZF / baseStaticTexture.depth * 255), 0, 255);
             } catch (IndexOutOfRangeException)
             {
                 Debug.LogError("Index error");
@@ -298,12 +305,18 @@ public class MaterialCreator : MonoBehaviour
 
         while (timeCount/(numTimePoints-1) < (float)percentTime/100)
         {
-            if (movingBlocks[index].TIMING != lastBlockTime)
+            try
             {
-                lastBlockTime = movingBlocks[index].TIMING;
-                timeCount++;
+                if (movingBlocks[index].MOVESEQ != lastBlockTime)
+                {
+                    lastBlockTime = movingBlocks[index].MOVESEQ;
+                    timeCount++;
+                }
             }
-
+            catch (ArgumentOutOfRangeException)
+            {
+                break;
+            }
             index++;
         }
 

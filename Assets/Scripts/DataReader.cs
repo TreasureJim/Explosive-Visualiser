@@ -37,6 +37,6 @@ public class Block
     public int XF { get; set; }
     public int YF { get; set; }
     public int ZF { get; set; }
-    public float TIMING { get; set; }
+    public int MOVESEQ { get; set; }
     public int PSTN { get; set; }
 }

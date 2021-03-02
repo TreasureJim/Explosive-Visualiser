@@ -14,8 +14,6 @@ public class TestCubeMaker : MonoBehaviour
     Material material;
     Texture3D texture;
 
-    Random rand;
-
     //readonly static Color32 airColor = new Color32(255, 0, 0, 0);
     readonly static Color32 blockColor = new Color32(0, 0, 0, 255);
 
@@ -27,10 +25,8 @@ public class TestCubeMaker : MonoBehaviour
     [SerializeField]
     int textureDepth = 18;
 
-    private void Awake()
+    void Awake()
     {
-        rand = new Random();
-
         // Cache objects
         meshRenderer = GetComponent<MeshRenderer>();
         meshFilter = GetComponent<MeshFilter>();
