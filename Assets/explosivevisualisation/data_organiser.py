@@ -18,7 +18,7 @@ df["YF"] = df["YF"] + 1
 df["ZF"] = df["ZF"] + 1
 
 # round all values to remove decimal point
-df[["XC", "YC", "ZC", "XF", "YF", "ZF", "MOVESEQ", "PSTN"]] = df[["XC", "YC", "ZC", "XF", "YF", "ZF", "MOVESEQ", "PSTN"]].round(0).astype(object)
+df[["XC", "YC", "ZC", "XF", "YF", "ZF", "MOVESEQ", "PSTN"]] = df[["XC", "YC", "ZC", "XF", "YF", "ZF", "MOVESEQ", "PSTN"]].astype(int)
 
 zeroStartBlocks = df[df["MOVESEQ"]==-1] # blocks that dont move
 movingBlocks = df[df["MOVESEQ"]>=0].sort_values("MOVESEQ") # blocks that move

@@ -38,8 +38,20 @@ public class MaterialCreator : MonoBehaviour
     int numTimePoints = 73424;
 
     // Which percentage time point in the data to be shown
+    public int percentTimePoint;
     [SerializeField]
-    public int percentTimePoint = 0;
+    public int PercentTimePoint {
+        get
+        {
+            return percentTimePoint;
+        }
+        set
+        {
+            if(value >= 0 && value <= 100) { }
+            percentTimePoint = Mathf.Clamp(value, 0, 100);
+            LoadTextureAtPoint(percentTimePoint);
+        } 
+    }
 
     // How often (in percent) a save point is made (the smaller = more space but less calculation time)
         // Each save point is roughly 12MB
@@ -65,7 +77,7 @@ public class MaterialCreator : MonoBehaviour
         // Retrieve all saved textures
         GetReferenceTextures();
         // Load initial texture time point
-        LoadTextureAtPoint(percentTimePoint);
+        PercentTimePoint = 0;
     }
 
     // Get data from csv file
@@ -220,35 +232,23 @@ public class MaterialCreator : MonoBehaviour
         // If missing base texture then create it
         if (percentTime == 0)
         {
-            CreateBaseTexture();
+            GetBaseTexture();
             return;
         }
 
         // Find the block TIMING
-        float startBlockTime = PercentTimeToBlockTime(startingTime);
-        float finishBlockTime = PercentTimeToBlockTime(percentTime);
+        int startBlockTime = PercentTimeToIndex(startingTime);
+        int finishBlockTime = PercentTimeToIndex(percentTime);
 
         texture = new Texture3D(textureWidth, textureHeight, textureDepth, TextureFormat.RGBA32, false)
         {
             wrapMode = TextureWrapMode.Clamp,
             filterMode = FilterMode.Point
         };
-        Color32[] textureColors = baseStaticTexture.GetPixels32();
+        Color32[] textureColors = refTexture.GetPixels32();
 
-        // Find the index to start at
-        int BlockTimeToIndex(float blockTime)
-        {
-            int index = 0;
-            while (movingBlocks[index].MOVESEQ < blockTime)
-            {
-                index++;
-            }
-
-            return index;
-        }
-
-        int blockIndex = BlockTimeToIndex(startBlockTime);
-        while (movingBlocks[blockIndex].MOVESEQ <= finishBlockTime)
+        int blockIndex = startBlockTime;
+        while (blockIndex <= finishBlockTime)
         {
             // Initial location of block
             int textureIndex1 = (texture.width * texture.height * movingBlocks[blockIndex].ZC + texture.width * movingBlocks[blockIndex].XC + movingBlocks[blockIndex].YC) - (texture.width * texture.height + texture.width + 1);
@@ -261,9 +261,9 @@ public class MaterialCreator : MonoBehaviour
                 textureColors[textureIndex1] = airColor;
                 // Set new location to be block coloured
                 textureColors[textureIndex2] = new Color32(0, (byte)((float)movingBlocks[blockIndex].ZF / baseStaticTexture.depth * 255), 0, 255);
-            } catch (IndexOutOfRangeException)
+            } catch (IndexOutOfRangeException e)
             {
-                Debug.LogError("Index error");
+                Debug.LogError(e);
             }
 
             blockIndex++;
@@ -274,6 +274,7 @@ public class MaterialCreator : MonoBehaviour
         texture.Apply();
         // Apply to shader
         meshRenderer.sharedMaterial.SetTexture("_MainTex", texture);
+        Debug.Log($"Loaded texture at: {percentTime}");
     }
     // Do the same as CreateTextureAtPoint then save texture
     void SaveTextureAtPoint(int percentTime, Texture3D refTexture, int startingTime)
@@ -290,20 +291,21 @@ public class MaterialCreator : MonoBehaviour
 
 
     // Convert a percentage time to a time in the dataset to load
-    float PercentTimeToBlockTime(int percentTime)
+    int PercentTimeToIndex(int percentTime)
     {
         // accounting for zero division error
         if (percentTime == 0)
         {
-            return 0.0f;
+            return 0;
         }
 
-        float timeCount = 0;
+        int timeCount = 0;
         int index = 0;
 
-        float lastBlockTime = 0;
+        int lastBlockTime = 0;
 
-        while (timeCount/(numTimePoints-1) < (float)percentTime/100)
+        // Get last index location of block percentTime % along array
+        while (timeCount/(numTimePoints) <= (float)percentTime/100)
         {
             try
             {
@@ -313,14 +315,15 @@ public class MaterialCreator : MonoBehaviour
                     timeCount++;
                 }
             }
-            catch (ArgumentOutOfRangeException)
+            catch (ArgumentOutOfRangeException e)
             {
+                Debug.LogError(e);
                 break;
             }
             index++;
         }
 
-        return lastBlockTime;
+        return index;
     }
 
     void Update()
