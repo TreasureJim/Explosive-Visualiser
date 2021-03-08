@@ -305,14 +305,21 @@ public class MaterialCreator : MonoBehaviour
         int lastBlockTime = 0;
 
         // Get last index location of block percentTime % along array
-        while (timeCount/(numTimePoints) <= (float)percentTime/100)
+        while ((float)timeCount/(numTimePoints) <= (float)percentTime/100)
         {
             try
             {
-                if (movingBlocks[index].MOVESEQ != lastBlockTime)
+                if (index < movingBlocks.Count)
                 {
-                    lastBlockTime = movingBlocks[index].MOVESEQ;
-                    timeCount++;
+                    if (movingBlocks[index].MOVESEQ != lastBlockTime)
+                    {
+                        lastBlockTime = movingBlocks[index].MOVESEQ;
+                        timeCount++;
+                    }
+                }
+                else 
+                {
+                    return movingBlocks.Count - 1;
                 }
             }
             catch (ArgumentOutOfRangeException e)

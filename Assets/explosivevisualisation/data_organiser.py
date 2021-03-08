@@ -25,7 +25,7 @@ movingBlocks = df[df["MOVESEQ"]>=0].sort_values("MOVESEQ") # blocks that move
 
 zeroStartBlocks.to_csv("zeroStartBlocks.csv", index=False)
 movingBlocks.to_csv("moving_block.csv", index=False)
-df.to_csv("all_block.csv")
+df.to_csv("all_block.csv", index=False)
 
 print("numTimePoints: ", len(df[df["MOVESEQ"]>=0]))
 print("highest x value: ", max(df.XC)-1, ", highest y value: ", max(df.YC)-1, ", highest z value: ", max(df.ZC)-1)
